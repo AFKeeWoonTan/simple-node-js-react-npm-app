@@ -9,33 +9,12 @@ on:
       - main
 
 jobs:
-  eslint:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Cache Node.js modules
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: ${{ runner.os }}-node-modules
-
-      - name: Install Node.js dependencies
-        run: npm install
-
-      - name: Create reports directory
-        run: mkdir -p reports
-
-      - name: Run ESLint with SARIF output
-        run: npx eslint . --format sarif --output-file reports/eslint-results.sarif || true
-
-      - name: Debug ESLint Output
-        run: cat reports/eslint-results.sarif || echo "No SARIF report generated"
-
-      - name: Upload SARIF report
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: reports/eslint-results.sarif
+    - uses: actions/checkout@v2
+    - name: Install modules
+      run: yarn
+    - name: Run ESLint
+      run: eslint . --ext .js,.jsx,.ts,.tsx
 
