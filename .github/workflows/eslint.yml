@@ -24,8 +24,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Create reports directory
+        run: mkdir -p reports
+
       - name: Run ESLint with SARIF output
         run: npx eslint . --format sarif --output-file reports/eslint-results.sarif || true
+
+      - name: Debug ESLint Output
+        run: cat reports/eslint-results.sarif || echo "No SARIF report generated"
 
       - name: Upload SARIF report
         uses: github/codeql-action/upload-sarif@v3
