@@ -1,12 +1,6 @@
 name: "CodeQL Analysis Lab"
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  schedule:
-    - cron: '0 12 * * 1'  # Runs every Monday at 12:00 UTC
+on: [push, pull_request]
 
 jobs:
   analyze:
@@ -20,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'javascript', 'java', 'python' ] # Update based on your repo
+        language: [ 'javascript', 'java', 'python' ]
 
     steps:
       - name: Checkout repository
