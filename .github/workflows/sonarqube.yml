@@ -23,23 +23,25 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run ESLint (Optional)
-        run: npx eslint . --format json --output-file eslint-report.json
-
       - name: Start SonarQube Server
         run: |
           docker run -d --name sonarqube \
             -p 9000:9000 \
             -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true \
             sonarqube:lts
+          sleep 10
+          docker logs sonarqube  # Check logs for errors
+
+      - name: Check Running Containers
+        run: docker ps -a
 
       - name: Wait for SonarQube to be Ready
         run: |
           echo "Waiting for SonarQube to start..."
-          until curl -s http://localhost:9000/api/system/health | grep -q '"health":"GREEN"'; do
+          timeout 300 sh -c 'until curl -s http://localhost:9000/api/system/health | grep -q "\"health\":\"GREEN\""; do
             sleep 10
             echo "Still waiting..."
-          done
+          done'
           echo "SonarQube is ready!"
 
       - name: Start SonarQube Scanner
@@ -54,4 +56,7 @@ jobs:
 
       - name: Stop SonarQube Server
         if: always()
-        run: docker stop sonarqube
+        run: |
+          if [ "$(docker ps -q -f name=sonarqube)" ]; then
+            docker stop sonarqube
+          fi
