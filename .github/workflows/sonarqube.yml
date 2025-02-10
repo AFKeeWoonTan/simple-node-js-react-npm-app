@@ -30,9 +30,6 @@ jobs:
             --memory=3g --cpus=2 \
             -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true \
             -e SONAR_WEB_SYSTEMPASSCODE="admin123" \
-            -v $HOME/sonarqube_data:/opt/sonarqube/data \
-            -v $HOME/sonarqube_logs:/opt/sonarqube/logs \
-            -v $HOME/sonarqube_extensions:/opt/sonarqube/extensions \
             sonarqube:lts
           sleep 10
           docker logs sonarqube
@@ -43,13 +40,11 @@ jobs:
       - name: Wait for SonarQube to be Ready
         run: |
           echo "Waiting for SonarQube to start..."
-          timeout 300 sh -c 'until curl -s http://localhost:9000/api/system/health | grep -q "\"health\":\"GREEN\""; do
+          timeout 600 sh -c 'until curl -s http://localhost:9000/api/system/health | grep -q "\"health\":\"GREEN\""; do
             echo "SonarQube not ready yet..."
-            docker ps -a
             sleep 10
           done'
           echo "SonarQube is ready!"
-
 
       - name: Extract SonarQube Admin Token
         run: |
