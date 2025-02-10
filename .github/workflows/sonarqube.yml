@@ -31,20 +31,11 @@ jobs:
             -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true \
             -e SONAR_WEB_SYSTEMPASSCODE="admin123" \
             sonarqube:lts
-          sleep 10
+          sleep 20
           docker logs sonarqube
 
       - name: Check Running Containers
         run: docker ps -a
-
-      - name: Wait for SonarQube to be Ready
-        run: |
-          echo "Waiting for SonarQube to start..."
-          timeout 600 sh -c 'until curl -s http://localhost:9000/api/system/health | grep -q "\"health\":\"GREEN\""; do
-            echo "SonarQube not ready yet..."
-            sleep 10
-          done'
-          echo "SonarQube is ready!"
 
       - name: Extract SonarQube Admin Token
         run: |
