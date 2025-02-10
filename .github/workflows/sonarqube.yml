@@ -73,9 +73,9 @@ jobs:
             -v $PWD:/usr/src \
             sonarsource/sonar-scanner-cli \
             -Dsonar.projectKey=my-javascript-project \
-            -Dsonar.sources=. \
+            -Dsonar.sources=/usr/src \
             -Dsonar.host.url=http://localhost:9000 \
-            -Dsonar.login=${{ $SONARQUBE_TOKEN }}
+            -Dsonar.login="$SONARQUBE_TOKEN"
 
       - name: Stop SonarQube Server
         if: always()
