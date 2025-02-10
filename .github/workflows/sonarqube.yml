@@ -23,14 +23,26 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Start PostgreSQL for SonarQube
+        run: |
+          docker run -d --name postgres \
+            -e POSTGRES_USER=sonar \
+            -e POSTGRES_PASSWORD=sonar \
+            -e POSTGRES_DB=sonarqube \
+            -p 5432:5432 \
+            postgres:13
+
       - name: Start SonarQube Server
         run: |
           docker run -d --name sonarqube \
             -p 9000:9000 \
-            -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true \
+            --memory=3g --cpus=2 \
+            -e SONAR_JDBC_URL=jdbc:postgresql://postgres:5432/sonarqube \
+            -e SONAR_JDBC_USERNAME=sonar \
+            -e SONAR_JDBC_PASSWORD=sonar \
             sonarqube:lts
           sleep 10
-          docker logs sonarqube  # Check logs for errors
+          docker logs sonarqube
 
       - name: Check Running Containers
         run: docker ps -a
@@ -38,11 +50,22 @@ jobs:
       - name: Wait for SonarQube to be Ready
         run: |
           echo "Waiting for SonarQube to start..."
-          timeout 300 sh -c 'until curl -s http://localhost:9000/api/system/health | grep -q "\"health\":\"GREEN\""; do
+          timeout 600 sh -c 'until curl -s http://localhost:9000/api/system/health | grep -q "\"health\":\"GREEN\""; do
             sleep 10
             echo "Still waiting..."
           done'
           echo "SonarQube is ready!"
+
+      - name: Extract SonarQube Admin Token
+        run: |
+          echo "Fetching SonarQube Admin Token..."
+          TOKEN=$(docker logs sonarqube 2>&1 | grep -A1 "generated a default admin token" | tail -n1 | awk '{print $NF}')
+          echo "SONARQUBE_TOKEN=$TOKEN" >> $GITHUB_ENV
+          echo "SonarQube token extracted."
+
+      - name: Use Extracted Token
+        run: |
+          echo "Using SonarQube Token: $SONARQUBE_TOKEN"
 
       - name: Start SonarQube Scanner
         run: |
@@ -52,7 +75,7 @@ jobs:
             -Dsonar.projectKey=my-javascript-project \
             -Dsonar.sources=. \
             -Dsonar.host.url=http://localhost:9000 \
-            -Dsonar.login=${{ secrets.SONARQUBE_TOKEN }}
+            -Dsonar.login=${{ $SONARQUBE_TOKEN }}
 
       - name: Stop SonarQube Server
         if: always()
