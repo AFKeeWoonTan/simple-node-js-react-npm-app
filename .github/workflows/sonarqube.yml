@@ -1,0 +1,57 @@
+name: SonarQube Analysis
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  sonarqube:
+    name: Analyze with SonarQube
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run ESLint (Optional)
+        run: npx eslint . --format json --output-file eslint-report.json
+
+      - name: Start SonarQube Server
+        run: |
+          docker run -d --name sonarqube \
+            -p 9000:9000 \
+            -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true \
+            sonarqube:lts
+
+      - name: Wait for SonarQube to be Ready
+        run: |
+          echo "Waiting for SonarQube to start..."
+          until curl -s http://localhost:9000/api/system/health | grep -q '"health":"GREEN"'; do
+            sleep 10
+            echo "Still waiting..."
+          done
+          echo "SonarQube is ready!"
+
+      - name: Start SonarQube Scanner
+        run: |
+          docker run --rm --network host \
+            -v $PWD:/usr/src \
+            sonarsource/sonar-scanner-cli \
+            -Dsonar.projectKey=my-javascript-project \
+            -Dsonar.sources=. \
+            -Dsonar.host.url=http://localhost:9000 \
+            -Dsonar.login=${{ secrets.SONARQUBE_TOKEN }}
+
+      - name: Stop SonarQube Server
+        if: always()
+        run: docker stop sonarqube
