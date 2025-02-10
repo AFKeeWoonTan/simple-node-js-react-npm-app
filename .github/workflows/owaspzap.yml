@@ -17,4 +17,27 @@ jobs:
           target: 'https://asiaone.com'
           rules_file_name: '.zap/rules.tsv'
           cmd_options: '-a'
+          scan_timeout: 180  # Timeout in seconds (30 minutes)
+          generate_report: true  # Enable report generation
+
+      - name: Wait for ZAP to complete scan
+        run: |
+          echo "Waiting for the scan to complete..."
+          timeout 180s docker logs zap | tee zap_scan_output.log | tail -n 1000
+          echo "ZAP scan complete or timeout reached."
+
+      - name: Generate partial report
+        run: |
+          # If scan times out, generate partial report
+          if [ -f zap_scan_output.log ]; then
+            echo "Generating partial report..."
+            docker exec zap zap-cli report -o zap_report.html  # Generate the HTML report
+            echo "Report generated at zap_report.html"
+          fi
+
+      - name: Upload ZAP Report as Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: zap-report
+          path: zap_report.html
 
