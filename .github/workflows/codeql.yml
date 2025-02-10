@@ -33,5 +33,5 @@ jobs:
       - name: Upload SARIF report
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: ./results/javascript.sarif
+          sarif_file: /home/runner/work/simple-node-js-react-npm-app/results/javascript.sarif
 
